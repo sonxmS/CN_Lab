@@ -5,47 +5,38 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
-void main()
-{
+int main() {
     int server;
+    char buffer[1024];
     struct sockaddr_in servAddr, clientAddr;
-    char serverMsg[2000], clientMsg[2000];
-    int client_struct_length = sizeof(clientAddr);
+    socklen_t addrSize = sizeof(clientAddr);
     server = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (server < 0)
-    {
-        printf("Error while creating socket");
-        exit(1);
-    }
-    else
-    {
-        printf("Socket created successfullt\n");
+    if (server < 0) {
+        perror("Socket creation failed");
+        return 1;
     }
     servAddr.sin_family = AF_INET;
     servAddr.sin_port = htons(2002);
     servAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    if (bind(server, (struct sockaddr *)&servAddr, sizeof(servAddr)) < 0)
-    {
-        printf("Couldnt bind to port\n");
-        exit(1);
+    if (bind(server, (struct sockaddr *)&servAddr, sizeof(servAddr)) < 0) {
+        perror("Bind failed");
+        return 1;
+    }
+    printf("Server ready, waiting for data...\n");
+
+    if (recvfrom(server, buffer, sizeof(buffer), 0, (struct sockaddr *)&clientAddr, &addrSize) < 0) {
+        perror("Receive failed");
+        return 1;
+    }
+    printf("Data received: %s\n", buffer);
+
+    strcpy(buffer, "Hi This is server\n");
+    if (sendto(server, buffer, strlen(buffer), 0, (struct sockaddr *)&clientAddr, addrSize) < 0) {
+        perror("Send failed");
+        return 1;
     }
 
-    else
-    {
-        printf("Binding Done\n");
-        printf("Listening\n");
-        if (recvfrom(server, clientMsg, sizeof(clientMsg), 0, (struct sockaddr *)&clientAddr,&client_struct_length) < 0)
-        {
-            printf("COuldn't recieve\n");
-            exit(1);
-        }
-        printf("Msg from client:%s\n", clientMsg);
-        strcpy(serverMsg, clientMsg);
-        if (sendto(server, serverMsg, strlen(serverMsg), 0, (struct sockaddr *)&clientAddr, client_struct_length) < 0)
-        {
-            printf("Can't send\n");
-            exit(1);
-        }
-        close(server);
-    }
+    close(server);
+
+    return 0;
 }
