@@ -74,7 +74,6 @@ int main() {
             snprintf(buffer, sizeof(buffer), "Server PID: %d\n", getpid());
             send(newSocket, buffer, strlen(buffer), 0);
 
-            // Send file contents
             while ((bytesRead = read(fileDescriptor, buffer, sizeof(buffer))) > 0) {
                 send(newSocket, buffer, bytesRead, 0);
             }
